@@ -36,7 +36,7 @@ func main() {
 	}
 	tokenRepository:=boltDB.NewTokenRepository(db)
 
-	tgBot := telegram.NewBot(bot,pocketClient,tokenRepository,cfg.AuthServerURL)
+	tgBot := telegram.NewBot(bot,pocketClient,tokenRepository,cfg.AuthServerURL,cfg.Messages)
 
 	authorizationServer:=server.NewAuthorizationServer(pocketClient,tokenRepository,cfg.TelegramBotURL)
 
