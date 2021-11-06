@@ -12,7 +12,7 @@ func(b *Bot)initAuthProcess(message *tgbotapi.Message)error{
 	if err!=nil{
 		return err
 	}
-	msg := tgbotapi.NewMessage(message.Chat.ID,fmt.Sprintf(replyStartTemplate,authLink))
+	msg := tgbotapi.NewMessage(message.Chat.ID,fmt.Sprintf(b.messages.Start,authLink))
 
 	_,err=b.bot.Send(msg)
 	return err

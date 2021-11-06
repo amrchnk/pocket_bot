@@ -9,8 +9,6 @@ import (
 
 const (
 	commandStart = "start"
-	replyStartTemplate="Привет! Чтобы пользоваться данным ботом, тебе необходимо дать доступ к своему аккаунту по этой ссылочке: \n%s"
-	replyAlreadyAuth="Ты уже авторизирован! Жду твои ссылочки; )"
 )
 
 func (b *Bot) handleCommand(message *tgbotapi.Message) error{
@@ -24,29 +22,24 @@ func (b *Bot) handleCommand(message *tgbotapi.Message) error{
 }
 
 func (b *Bot) handleMessage(message *tgbotapi.Message) error{
-	msg := tgbotapi.NewMessage(message.Chat.ID, "Ссылка успешно сохранена!")
 	_,err:=url.ParseRequestURI(message.Text)
 	if err!=nil{
-		msg.Text="Ссылка невалидна"
-		_,err=b.bot.Send(msg)
-		return err
+		return errInvalidURL
 	}
 
 	accessToken,err:=b.getAccessToken(message.Chat.ID)
 	if err!=nil{
-		msg.Text="Для сохранения ссылок, нужно авторизоваться (команда /start)"
-		_,err=b.bot.Send(msg)
-		return err
+		return errUnauthorized
 	}
 
 	if err:=b.pocketClient.Add(context.Background(),pocket.AddInput{
 		AccessToken: accessToken,
 		URL: message.Text,
 	});err!=nil{
-		msg.Text="Не удалось сохранить ссылку, попробуй еще раз попозже"
-		_,err=b.bot.Send(msg)
-		return err
+		return errUnableToSave
 	}
+
+	msg := tgbotapi.NewMessage(message.Chat.ID, b.messages.SavedSuccessfully)
 	_,err=b.bot.Send(msg)
 	return err
 }
@@ -56,13 +49,13 @@ func (b *Bot)handleStartCommand(message *tgbotapi.Message)error{
 	if err!=nil{
 		return b.initAuthProcess(message)
 	}
-	msg:=tgbotapi.NewMessage(message.Chat.ID,replyAlreadyAuth)
+	msg:=tgbotapi.NewMessage(message.Chat.ID,b.messages.AlreadyAuthorized)
 	_,err=b.bot.Send(msg)
 	return err
 }
 
 func (b *Bot)handleUnknownCommand(message *tgbotapi.Message)error{
-	msg := tgbotapi.NewMessage(message.Chat.ID, "Я не знаю такой команды")
+	msg := tgbotapi.NewMessage(message.Chat.ID, b.messages.UnknownCommand)
 
 	_,err:=b.bot.Send(msg)
 	return err

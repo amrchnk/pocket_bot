@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/amrchnk/pocket_bot/pkg/config"
 	"github.com/amrchnk/pocket_bot/pkg/repository"
 	"github.com/amrchnk/pocket_bot/pkg/repository/boltDB"
 	"github.com/amrchnk/pocket_bot/pkg/server"
@@ -12,13 +13,19 @@ import (
 )
 
 func main() {
-	bot, err := tgbotapi.NewBotAPI("2061629377:AAHm7XED8V-VZoB-TeGNtVM2VLUAbHQxxkk")
+	cfg,err:=config.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(cfg)
+	bot, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+
 	bot.Debug = true
-	pocketClient,err:=pocket.NewClient("99455-5321bfb0b0228b3ec1d7f658")
+	pocketClient,err:=pocket.NewClient(cfg.PocketConsumerKey)
 	if err!=nil{
 		log.Fatal(err)
 	}
@@ -29,9 +36,9 @@ func main() {
 	}
 	tokenRepository:=boltDB.NewTokenRepository(db)
 
-	tgBot := telegram.NewBot(bot,pocketClient,tokenRepository,"http://localhost:8080/")
+	tgBot := telegram.NewBot(bot,pocketClient,tokenRepository,cfg.AuthServerURL)
 
-	authorizationServer:=server.NewAuthorizationServer(pocketClient,tokenRepository,"https://t.me/AnekPocketBot")
+	authorizationServer:=server.NewAuthorizationServer(pocketClient,tokenRepository,cfg.TelegramBotURL)
 
 	go func(){
 		if err := tgBot.Start(); err != nil {
@@ -45,8 +52,8 @@ func main() {
 
 }
 
-func initDB()(*bolt.DB,error){
-	db,err:=bolt.Open("boltDB.db",0600,nil)
+func initDB(cfg *config.Config)(*bolt.DB,error){
+	db,err:=bolt.Open(cfg.DBPath,0600,nil)
 	if err!=nil{
 		return nil,err
 	}
