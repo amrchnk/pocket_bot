@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"github.com/spf13/viper"
 )
 
@@ -33,47 +34,52 @@ type Responces struct {
 	UnknownCommand    string `mapstructure:"unknown_command"`
 }
 
-func Init()(*Config,error){
+func Init() (*Config, error) {
+	var cfg Config
+
+	if err := unmarshalYML(&cfg); err != nil {
+		return nil, err
+	}
+
+	if err := parseEnv(&cfg); err != nil {
+		return nil, err
+	}
+
+	return &cfg, nil
+}
+
+func unmarshalYML(cfg *Config) error {
 	viper.AddConfigPath("configs")
 	viper.SetConfigName("main")
 
-	if err:=viper.ReadInConfig();err!=nil{
-		return nil,err
+	if err := viper.ReadInConfig(); err != nil {
+		return err
+	}
+	if err := viper.Unmarshal(&cfg); err != nil {
+		return err
+	}
+	if err := viper.UnmarshalKey("messages.responses", &cfg.Messages.Responces); err != nil {
+		return err
+	}
+	if err := viper.UnmarshalKey("messages.errors", &cfg.Messages.Errors); err != nil {
+		return err
 	}
 
-	var cfg Config
-
-	if err:=viper.Unmarshal(&cfg);err!=nil{
-		return nil,err
-	}
-
-	if err:=viper.UnmarshalKey("messages.responses",&cfg.Messages.Responces);err!=nil{
-		return nil,err
-	}
-	if err:=viper.UnmarshalKey("messages.errors",&cfg.Messages.Errors);err!=nil{
-		return nil,err
-	}
-
-	if err:=parseEnv(&cfg);err!=nil{
-		return nil,err
-	}
-
-	return &cfg,nil
+	return nil
 }
 
-func parseEnv(cfg *Config)error{
-	if err:=viper.BindEnv("token");err!=nil{
+func parseEnv(cfg *Config) error {
+	viper.AddConfigPath(".")
+	viper.SetConfigName("app")
+	viper.AutomaticEnv()
+	if err := viper.ReadInConfig(); err != nil {
 		return err
 	}
-	if err:=viper.BindEnv("consumer_key");err!=nil{
-		return err
+	cfg.TelegramToken = viper.GetString("token")
+	cfg.PocketConsumerKey = viper.GetString("consumer_key")
+	cfg.AuthServerURL = viper.GetString("auth_server_url")
+	if cfg.TelegramToken == "" || cfg.PocketConsumerKey == "" || cfg.AuthServerURL == "" {
+		return errors.New("Переменные окружения не найдены")
 	}
-	if err:=viper.BindEnv("auth_server_url");err!=nil{
-		return err
-	}
-	cfg.TelegramToken=viper.GetString("token")
-	cfg.TelegramToken=viper.GetString("consumer_key")
-	cfg.TelegramToken=viper.GetString("auth_server_url")
-
 	return nil
 }

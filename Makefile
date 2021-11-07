@@ -6,3 +6,9 @@ build:
 
 run: build
 	./.bin/bot
+
+build-image:
+	docker build -t telegram-bot .
+
+start-container:
+	docker run --name tg-bot -p 8080:8080 telegram-bot

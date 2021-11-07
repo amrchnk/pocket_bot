@@ -17,7 +17,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(cfg)
+	log.Println("ENV:",cfg)
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
 	if err != nil {
 		log.Fatal(err)
@@ -30,7 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db,err:=initDB()
+	db,err:=initDB(cfg)
 	if err!=nil{
 		log.Fatal(err)
 	}
